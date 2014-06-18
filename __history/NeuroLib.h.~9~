@@ -1,0 +1,207 @@
+class Neuron{
+
+private:
+
+  int mode; //input, output, hidden = 1,2,3
+
+  double **output_weights;
+  Neuron **input_neurons;
+  int n_of_input_neurons;
+  Neuron **output_neurons;
+  int n_of_output_neurons;
+  int position;
+
+
+  double net;
+  double active_signal;
+  double displacement;
+
+  double error;
+  double learning_rate;
+
+
+public:
+
+  Neuron(){};
+  Neuron(int, int, int, int);
+  void setInputDepending(Neuron **input);
+  void setOutputDepending(Neuron **output);
+
+  void calculate_net();
+  void active_function();
+  void calculate_error(double);
+  void update_weights(double);
+
+  double getNet();
+  double getWeight(int);
+  void incrementWeight(int, double);
+
+};
+
+class NeuralNetwork{
+	private:
+
+  Neuron **neuro_net_array;
+  int n_of_layers;
+  int *n_of_neurons_in_layers;
+
+	public:
+
+  NeuralNetwork(int*, int);
+};
+
+Neuron::Neuron(int n_of_input, int n_of_output, int pos, int mod){
+
+  net = 0;
+  error = 0;
+  mode = mod;
+  position = pos;
+  active_signal = 0;
+  displacement = (rand() % 300)/100;
+  learning_rate = 0.025;
+
+  if (mode != 1) {
+	//input_neurons = input;
+	n_of_input_neurons = n_of_input;
+  }else{
+	input_neurons = NULL;
+	n_of_input_neurons = NULL;
+  }
+
+  if (mode != 2) {
+	//output_neurons = output;
+	n_of_output_neurons = n_of_output;
+	output_weights = new double*[n_of_output_neurons];
+	for (int i = 0; i < n_of_output_neurons ; i++) {
+	  *output_weights[i] = (rand() % 300)/100;
+	}
+  }else{
+	input_neurons = NULL;
+	output_weights = NULL;
+  }
+
+}
+
+void Neuron::setInputDepending(Neuron **input){
+  if (mode != 1) {
+	input_neurons = input;
+  }
+}
+
+void Neuron::setOutputDepending(Neuron **output){
+  if (mode != 2) {
+	output_neurons = output;
+  }
+}
+
+
+void Neuron::calculate_net(){
+  net = 0;
+  for (int i=0; i < n_of_input_neurons; i++) {
+	net += (input_neurons[i]->getNet())*(input_neurons[i]->getWeight(position));
+  }
+  net += displacement;
+}
+
+void Neuron::active_function(){
+  if (mode == 2) {
+	if(net > 0){
+	  active_signal = 1;
+	}else{
+	  active_signal = 0;
+	}
+  }else{
+	if (abs(net) < 38 ){
+	  active_signal = 1/(1+exp(-net));  //sigmoid
+	}else if (net >= 38){
+	  active_signal = 1;
+	}else{
+	  active_signal = 0;
+	}
+  }
+}
+
+void Neuron::calculate_error(double expected_value){
+
+  if (mode == 2) {
+	  double exp = expected_value;
+	  error = (exp - net)*net*(1-net);
+  }else{
+	double sum = 0;
+	for (int i = 0; i < n_of_output_neurons; i++) {
+	  sum += (output_neurons[i]->error)*(*output_weights[i]);
+	}
+	error = sum*net*(1-net);
+  }
+}
+
+void Neuron::update_weights(double exit_signal){
+if (mode != 1) {
+  for (int i = 0; i < n_of_output_neurons; i++) {
+	if (mode == 2) {
+	  input_neurons[i]->incrementWeight(position, learning_rate*error*exit_signal);
+	}else{
+	  input_neurons[i]->incrementWeight(position, learning_rate*error*net);
+	}
+	displacement -= learning_rate*error;
+  }
+}
+}
+
+double Neuron::getNet(){
+  return net;
+}
+
+double Neuron::getWeight(int to_element_position){
+  return *output_weights[to_element_position];
+}
+
+void Neuron::incrementWeight(int n_of_output_neuron, double value){
+  *output_weights[n_of_output_neuron] = value+*output_weights[n_of_output_neuron];
+}
+
+NeuralNetwork::NeuralNetwork(int* n_of_neurons_in_each_layer, int number_of_layers){
+  n_of_layers = number_of_layers;
+  n_of_neurons_in_layers = new int[n_of_layers];
+
+  int max = 0;
+  for (int i = 0; i < 10; i++) {
+	n_of_neurons_in_layers[i] = n_of_neurons_in_each_layer[i];
+	if (n_of_neurons_in_layers[i]>max) {
+	  max = n_of_neurons_in_layers[i];
+	}
+  }
+
+  neuro_net_array = new Neuron*[number_of_layers];
+  for (int i =0 ; i < number_of_layers; i++) {
+	neuro_net_array[i] = new Neuron[n_of_neurons_in_layers[i]];
+  }
+
+  for (int i = 0; i < n_of_layers; i++) {
+	for (int j = 0; j<n_of_neurons_in_layers[i]; j++) {
+	  if (i == 0) {
+		neuro_net_array[i][j] = *(new Neuron(NULL, n_of_neurons_in_layers[i+1], j, 1));
+	  }else if ( i == n_of_layers-1){
+		neuro_net_array[i][j] = *(new Neuron(n_of_neurons_in_layers[i-1], NULL, j, 2));
+		neuro_net_array[i][j].setInputDepending(&neuro_net_array[i-1]);
+		if (j == n_of_neurons_in_layers[i]-1) {
+		  for (int z = 0; z < n_of_neurons_in_layers[i-1]; z++){
+			neuro_net_array[i-1][z].setOutputDepending(&neuro_net_array[i]);
+		  }
+		}
+	  }else{
+		neuro_net_array[i][j] = *(new Neuron(n_of_neurons_in_layers[i-1], n_of_neurons_in_layers[i+1], j, 3));
+		neuro_net_array[i][j].setInputDepending(&neuro_net_array[i-1]);
+		if (j == n_of_neurons_in_layers[i]-1) {
+		  for (int z = 0; z < n_of_neurons_in_layers[i-1]; z++){
+			neuro_net_array[i-1][z].setOutputDepending(&neuro_net_array[i]);
+		  }
+		}
+	  }
+	}
+  }
+}
+
+
+
+

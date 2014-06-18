@@ -1,0 +1,133 @@
+class Neuron{
+
+private:
+
+  int mode; //input, output, hidden = 1,2,3
+
+  double *output_weights[];
+  Neuron **input_neurons;
+  Neuron **output_neurons;
+  int position;
+
+  double net;
+  double active_signal;
+  double displacement;
+
+  double error;
+
+
+public:
+
+  Neuron ( Neuron **, Neuron **, int, int);
+
+  void calculate_net();
+  void active_function();
+  void calculate_error(double);
+  void update_output_weights();
+
+  double getNet();
+  double getWeight(int);
+
+};
+
+Neuron::Neuron(Neuron **input, Neuron **output, int pos, int mod){
+  int m = (**output_neurons).length();
+
+  net = 0;
+  error = 0;
+  mode = mod;
+  position = pos;
+  active_signal = 0;
+  displacement = (rand() % 300)/100;
+
+  if (mode != 1) {
+	input_neurons = input;
+  }else{
+	input_neurons = NULL;
+  }
+
+  if (mode != 2) {
+	output_neurons = output;
+	int n = output_neurons->length();
+	output_weights = new double*[*output_neurons.length()];
+	for (int i = 0; i < *output_neurons.lenght() ; i++) {
+	  output_weights[i] = (rand() % 300)/100;
+	}
+  }else{
+	*input_neurons = NULL;
+	*output_weights = NULL;
+  }
+
+}
+
+void Neuron::calculate_net(){
+  net = 0;
+  for (int i=0; i < input_neurons.length(); i++) {
+	net += (*input_neurons[i].getNet())*(*input_neurons[i].getWeight(position));
+  }
+  net += displacement;
+}
+
+void active_function(){
+  if (mode == 2) {
+	if net > 0 {
+	  active_signal = 1;
+	}else{
+	  active_signal = 0;
+	}
+  }else{
+	if abs(net) < 38 {
+	  active_signal = 1/(1+exp(-net));  //sigmoid
+	}else if (net >= 38){
+	  active_signal = 1;
+	}else{
+	  active_signal = 0;
+	}
+  }
+}
+
+void Neuron::calculate_error(double ideal_output_value){
+
+  if (mode == 2) {
+	  double ideal_output_value = ideal_output_value;
+	  error = (ideal_output_value - net)*net*(1-net);
+  }else{
+	sum = 0;
+	for (int i = 0; i < *output_neurons.lenght(); i++) {
+	  sum += (*output_neurons[i].error)*(*output_weights[i]);
+	}
+	error = sum*net*(1-net);
+  }
+}
+
+void Neuron::update_output_weights(){
+  for (int i = 0; i < *output_neurons.lenght; i++) {
+
+  }
+}
+/*
+        begin {для всех связей от скрытого слоя к этому выходному узлу}
+        for i := 1 to NUM_HID do
+            w[i] := w[i] + LEARNING_RATE * E * hl[i].out;
+        {обучение порогового уровня}
+        threshold := threshold - LEARNING_RATE * E
+	end
+
+*/
+
+double Neuron::getNet(){
+  return net;
+}
+
+double Neuron::getWeight(int to_element_position){
+  return *output_weights[to_element_position];
+}
+
+
+
+
+
+
+
+
+
